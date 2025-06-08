@@ -31,6 +31,10 @@ app.on_startup.append(on_startup)
 app.on_shutdown.append(on_shutdown)
 
 setup_application(app, dp, path="/webhook")
+async def healthcheck(request):
+    return web.Response(text="OK")
+
+app.router.add_get("/", healthcheck)
 
 if __name__ == "__main__":
     web.run_app(app, port=int(os.environ.get("PORT", 5000)))
