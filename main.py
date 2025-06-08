@@ -9,42 +9,36 @@ load_dotenv()
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 
-print(f"🔐 TOKEN: {'OK' if BOT_TOKEN else 'MISSING'}")
-print(f"🌐 WEBHOOK_URL: {WEBHOOK_URL}")
-
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
 
+
 @dp.message()
 async def handle_message(message: types.Message):
-    print(f"📩 Получено сообщение от {message.from_user.id}: {message.text}")
     await message.answer("✅ ArbitPRO работает через Webhook!")
 
+
 async def on_startup(app):
-    try:
-        print("🚀 Старт on_startup...")
-        await bot.set_webhook(WEBHOOK_URL)
-        print(f"✅ Webhook установлен: {WEBHOOK_URL}")
-    except Exception as e:
-        print(f"❌ Ошибка при установке Webhook: {e}")
+    await bot.set_webhook(WEBHOOK_URL)
+    print(f"🚀 Вебхук установлен: {WEBHOOK_URL}")
 
-async def on_shutdown(app):
-    print("⛔️ Отключение Webhook...")
-    await bot.delete_webhook()
-
-async def healthcheck(request):
-    return web.Response(text="OK")
+# ❌ Не добавляем on_shutdown, чтобы Webhook не удалялся
+# async def on_shutdown(app):
+#     await bot.delete_webhook()
 
 app = web.Application()
 app.on_startup.append(on_startup)
-app.on_shutdown.append(on_shutdown)
+# ❌ app.on_shutdown.append(on_shutdown) — удалено
 
+# Устанавливаем Webhook обработку
 setup_application(app, dp, path="/webhook")
+
+# Healthcheck для Render
+async def healthcheck(request):
+    return web.Response(text="OK")
+
 app.router.add_get("/", healthcheck)
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 10000))
-    print(f"🌍 Запуск бота на порту {port}...")
-    web.run_app(app, port=port)
-
+    web.run_app(app, port=int(os.environ.get("PORT", 10000)))
 
