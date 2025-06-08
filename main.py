@@ -14,21 +14,24 @@ dp = Dispatcher()
 
 @dp.message()
 async def handle_message(message: types.Message):
-    print(f"💬 Сообщение от: {message.from_user.id} — {message.text}")
     await message.answer("✅ ArbitPRO работает через Webhook!")
 
 async def on_startup(app):
-    print("🚀 Бот запущен")
+    await bot.set_webhook(WEBHOOK_URL)
+    print("🚀 Webhook установлен:", WEBHOOK_URL)
 
 async def on_shutdown(app):
-    print("⛔️ Бот остановлен")
+    await bot.delete_webhook()
+    print("⛔️ Webhook удалён")
 
 app = web.Application()
 app.on_startup.append(on_startup)
 app.on_shutdown.append(on_shutdown)
 
+# ВАЖНО! Webhook путь здесь
 setup_application(app, dp, path="/webhook")
 
+# Простой healthcheck для проверки Render
 async def healthcheck(request):
     return web.Response(text="OK")
 
@@ -36,3 +39,4 @@ app.router.add_get("/", healthcheck)
 
 if __name__ == "__main__":
     web.run_app(app, port=int(os.environ.get("PORT", 10000)))
+
