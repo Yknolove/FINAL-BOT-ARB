@@ -35,4 +35,4 @@ async def healthcheck(request):
 app.router.add_get("/", healthcheck)
 
 if __name__ == "__main__":
-    web.run_app(app, port=int(os.environ.get("PORT", 5000)))
+    web.run_app(app, port=int(os.environ.get("PORT", 10000)))
