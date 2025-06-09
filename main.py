@@ -19,6 +19,15 @@ bot = Bot(token=BOT_TOKEN)
 dp  = Dispatcher(bot)
 
 
+# /start handler to confirm bot is running
+@dp.message_handler(commands=["start"])
+async def cmd_start(message: types.Message):
+    await message.answer(
+        "Привет! Я ArbitPRO-бот и слежу за арбитражными возможностями. "
+        "Как только будет подходящая сделка, ты получишь уведомление в этом чате."
+    )
+
+
 # Utility: send embed-style arbitrage notification with URL buttons
 async def send_arbitrage_notification(
     chat_id: int,
@@ -94,3 +103,4 @@ if __name__ == "__main__":
 
     # Run app
     web.run_app(app, host="0.0.0.0", port=PORT)
+
