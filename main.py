@@ -20,6 +20,16 @@ dp  = Dispatcher(bot)
 
 
 # ---------------------------
+# Debug: логируем все callback_query
+# ---------------------------
+@dp.callback_query_handler()
+async def debug_all_callbacks(callback: types.CallbackQuery):
+    logging.info(f"Received callback_query: {callback.data}")
+    # Отвечаем, чтобы убрать спиннер
+    await callback.answer("Callback received")
+
+
+# ---------------------------
 # Утилита: отправка embed-сообщения об арбитраже
 # ---------------------------
 async def send_arbitrage_notification(
@@ -50,8 +60,11 @@ async def send_arbitrage_notification(
 
     keyboard = types.InlineKeyboardMarkup(row_width=2)
     keyboard.add(
-        types.InlineKeyboardButton("🔗 Открыть оффер на покупку", url=buy_url),
-        types.InlineKeyboardButton("🔗 Открыть оффер на продажу", url=sell_url),
+        types.InlineKeyboardButton("⚙️ Настройки", callback_data="settings"),
+        types.InlineKeyboardButton("📈 Калькулятор", callback_data="calculator"),
+    ).add(
+        types.InlineKeyboardButton("📜 История", callback_data="history"),
+        types.InlineKeyboardButton("🔥 Топ-сделки", callback_data="top_deals"),
     )
 
     await bot.send_message(
@@ -61,43 +74,6 @@ async def send_arbitrage_notification(
         disable_web_page_preview=True,
         reply_markup=keyboard,
     )
-
-
-# ---------------------------
-# Хэндлеры /start, меню, калькулятор, история, топ-сделки
-# ---------------------------
-def main_menu_keyboard() -> types.InlineKeyboardMarkup:
-    kb = types.InlineKeyboardMarkup(row_width=2)
-    kb.add(
-        types.InlineKeyboardButton("⚙️ Настройки", callback_data="settings"),
-        types.InlineKeyboardButton("📈 Калькулятор", callback_data="calculator"),
-    ).add(
-        types.InlineKeyboardButton("📜 История", callback_data="history"),
-        types.InlineKeyboardButton("🔥 Топ-сделки", callback_data="top_deals"),
-    )
-    return kb
-
-@dp.message_handler(commands=["start"])
-async def cmd_start(message: types.Message):
-    await message.reply(
-        "Привет! Я ArbitPRO-бот. Выберите действие:",
-        reply_markup=main_menu_keyboard()
-    )
-
-@dp.message_handler(commands=["ping"])
-async def cmd_ping(message: types.Message):
-    await message.reply("pong")
-
-@dp.callback_query_handler(lambda c: c.data in ["settings", "calculator", "history", "top_deals"])
-async def process_menu(callback: types.CallbackQuery):
-    mapping = {
-        "settings":   "Здесь будут настройки пользователя.",
-        "calculator": "Здесь калькулятор прибыли.",
-        "history":    "Здесь история сделок.",
-        "top_deals":  "Архив топ-сделок дня."
-    }
-    await callback.message.edit_text(mapping[callback.data], reply_markup=main_menu_keyboard())
-    await callback.answer()
 
 
 # ---------------------------
@@ -136,3 +112,4 @@ if __name__ == "__main__":
     app.on_shutdown.append(on_shutdown)
 
     web.run_app(app, host="0.0.0.0", port=PORT)
+
