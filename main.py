@@ -5,33 +5,21 @@ from aiohttp import web
 from aiogram import Bot, Dispatcher, types
 from aiogram.dispatcher.webhook import get_new_configured_app
 
-# — Логирование
+# Logging
 logging.basicConfig(level=logging.INFO)
 
-# — Переменные окружения
+# Environment variables
 BOT_TOKEN    = os.getenv("BOT_TOKEN")
-WEBHOOK_URL  = os.getenv("WEBHOOK_URL")   # e.g. https://your.domain/webhook
+WEBHOOK_URL  = os.getenv("WEBHOOK_URL")   # https://your.domain/webhook
 WEBHOOK_PATH = "/webhook"
 PORT         = int(os.getenv("PORT", 8443))
 
-# — Инициализация бота и диспетчера
+# Initialize bot and dispatcher
 bot = Bot(token=BOT_TOKEN)
 dp  = Dispatcher(bot)
 
 
-# ---------------------------
-# Debug: логируем все callback_query
-# ---------------------------
-@dp.callback_query_handler()
-async def debug_all_callbacks(callback: types.CallbackQuery):
-    logging.info(f"Received callback_query: {callback.data}")
-    # Отвечаем, чтобы убрать спиннер
-    await callback.answer("Callback received")
-
-
-# ---------------------------
-# Утилита: отправка embed-сообщения об арбитраже
-# ---------------------------
+# Utility: send embed-style arbitrage notification with URL buttons
 async def send_arbitrage_notification(
     chat_id: int,
     buy_source: str,
@@ -46,7 +34,9 @@ async def send_arbitrage_notification(
     sell_url: str,
 ):
     text = (
-        "<b>🪙 Арбитражная возможность найдена!</b>\n\n"
+        "<b>🪙 Арбитражная возможность найдена!</b>
+
+"
         f"💰 <b>Покупка:</b> {buy_source}\n"
         f"🏷️ <b>Курс:</b> {buy_rate:.2f} ₴\n"
         f"📦 <b>Объём:</b> от {buy_min}$\n\n"
@@ -60,11 +50,8 @@ async def send_arbitrage_notification(
 
     keyboard = types.InlineKeyboardMarkup(row_width=2)
     keyboard.add(
-        types.InlineKeyboardButton("⚙️ Настройки", callback_data="settings"),
-        types.InlineKeyboardButton("📈 Калькулятор", callback_data="calculator"),
-    ).add(
-        types.InlineKeyboardButton("📜 История", callback_data="history"),
-        types.InlineKeyboardButton("🔥 Топ-сделки", callback_data="top_deals"),
+        types.InlineKeyboardButton("🔗 Открыть оффер на покупку", url=buy_url),
+        types.InlineKeyboardButton("🔗 Открыть оффер на продажу", url=sell_url),
     )
 
     await bot.send_message(
@@ -76,16 +63,12 @@ async def send_arbitrage_notification(
     )
 
 
-# ---------------------------
-# Health-check для Render (GET/HEAD / → 200 OK)
-# ---------------------------
+# Health-check for Render
 async def handle_root(request: web.Request) -> web.Response:
     return web.Response(text="OK")
 
 
-# ---------------------------
-# Startup и Shutdown
-# ---------------------------
+# Startup and shutdown
 async def on_startup(app: web.Application):
     logging.info("Setting webhook…")
     await bot.set_webhook(WEBHOOK_URL)
@@ -94,22 +77,21 @@ async def on_startup(app: web.Application):
 async def on_shutdown(app: web.Application):
     logging.info("Deleting webhook…")
     await bot.delete_webhook()
-    logging.info("Closing bot HTTP session…")
     session = await bot.get_session()
     await session.close()
+    logging.info("HTTP session closed")
 
-
-# ---------------------------
-# Сборка и запуск aiohttp-приложения
-# ---------------------------
 if __name__ == "__main__":
+    # Configure aiohttp app with webhook route
     app = get_new_configured_app(dispatcher=dp, path=WEBHOOK_PATH)
 
+    # Add health-check routes
     app.router.add_route("GET",  "/", handle_root)
     app.router.add_route("HEAD", "/", handle_root)
 
+    # Register startup/shutdown hooks
     app.on_startup.append(on_startup)
     app.on_shutdown.append(on_shutdown)
 
+    # Run app
     web.run_app(app, host="0.0.0.0", port=PORT)
-
