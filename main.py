@@ -34,9 +34,7 @@ async def send_arbitrage_notification(
     sell_url: str,
 ):
     text = (
-        "<b>🪙 Арбитражная возможность найдена!</b>
-
-"
+        "<b>🪙 Арбитражная возможность найдена!</b>\n\n"
         f"💰 <b>Покупка:</b> {buy_source}\n"
         f"🏷️ <b>Курс:</b> {buy_rate:.2f} ₴\n"
         f"📦 <b>Объём:</b> от {buy_min}$\n\n"
@@ -80,6 +78,7 @@ async def on_shutdown(app: web.Application):
     session = await bot.get_session()
     await session.close()
     logging.info("HTTP session closed")
+
 
 if __name__ == "__main__":
     # Configure aiohttp app with webhook route
