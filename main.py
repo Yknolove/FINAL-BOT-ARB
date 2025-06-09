@@ -1,43 +1,48 @@
 import os
-from aiohttp import web
+import logging
 from aiogram import Bot, Dispatcher, types
-from aiogram.webhook.aiohttp_server import setup_application
-from dotenv import load_dotenv
+from aiogram.utils.executor import start_webhook
 
-load_dotenv()
+# Configure logging
+logging.basicConfig(level=logging.INFO)
 
-BOT_TOKEN = os.getenv("BOT_TOKEN")
-WEBHOOK_URL = os.getenv("WEBHOOK_URL")
+# Environment variables
+BOT_TOKEN = os.getenv("BOT_TOKEN")  # from .env
+WEBHOOK_URL = os.getenv("WEBHOOK_URL")  # e.g. https://final-bot-arb.onrender.com/webhook/<token>
+PORT = int(os.environ.get("PORT", 8443))
+WEBHOOK_PATH = f"/webhook/{BOT_TOKEN}"
 
+# Initialize bot and dispatcher
 bot = Bot(token=BOT_TOKEN)
-dp = Dispatcher()
+dp = Dispatcher(bot)
 
-@dp.message()
-async def handle_message(message: types.Message):
-    await message.answer("✅ ArbitPRO работает через Webhook!")
+# Handlers
+@dp.message_handler(commands=["start"])
+async def cmd_start(message: types.Message):
+    await message.reply("Привет! Я ArbitPRO-бот. Готов к работе.")
 
-async def on_startup(app):
-    print("🚀 Старт on_startup...")
+@dp.message_handler(commands=["ping"])
+async def cmd_ping(message: types.Message):
+    await message.reply("pong")
+
+# Startup and shutdown
+async def on_startup(_dp):
+    logging.info("Setting webhook...")
     await bot.set_webhook(WEBHOOK_URL)
-    print(f"✅ Вебхук установлен: {WEBHOOK_URL}")
+    logging.info(f"Webhook set to {WEBHOOK_URL}")
 
-async def on_shutdown(app):
-    print("⛔️ Отключение Webhook...")
+async def on_shutdown(_dp):
+    logging.info("Deleting webhook...")
     await bot.delete_webhook()
 
-app = web.Application()
-app.on_startup.append(on_startup)
-app.on_shutdown.append(on_shutdown)
-
-# ❗️Это ключевая строка: подключение Webhook
-setup_application(app, dp, path="/webhook")
-
-# Healthcheck (по корню)
-async def healthcheck(request):
-    return web.Response(text="OK")
-
-app.router.add_get("/", healthcheck)
-
 if __name__ == "__main__":
-    web.run_app(app, port=int(os.environ.get("PORT", 10000)))
+    start_webhook(
+        dispatcher=dp,
+        webhook_path=WEBHOOK_PATH,
+        on_startup=on_startup,
+        on_shutdown=on_shutdown,
+        host="0.0.0.0",
+        port=PORT,
+    )
+
 
