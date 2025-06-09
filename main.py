@@ -118,8 +118,9 @@ async def on_startup(app: web.Application):
 async def on_shutdown(app: web.Application):
     logging.info("Deleting webhook…")
     await bot.delete_webhook()
-    logging.info("Closing bot session…")
-    await bot.session.close()
+    logging.info("Closing bot HTTP session…")
+    session = await bot.get_session()
+    await session.close()
 
 
 # ---------------------------
