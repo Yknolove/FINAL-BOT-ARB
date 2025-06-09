@@ -1,6 +1,3 @@
-Below is the updated `main.py` with a simple inline menu displayed on `/start`. Copy this into your repo, redeploy on Render, and on `/start` you’ll see buttons.
-
-```python
 import os
 import logging
 from aiogram import Bot, Dispatcher, types
@@ -77,7 +74,6 @@ if __name__ == "__main__":
         host="0.0.0.0",
         port=PORT,
     )
-```
 
 Redeploy on Render, и при вводе `/start` у тебя появится меню с кнопками. Затем можно расширять каждую секцию нужной логикой.
 
