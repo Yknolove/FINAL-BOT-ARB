@@ -10,7 +10,7 @@ logging.basicConfig(level=logging.INFO)
 BOT_TOKEN = os.getenv("BOT_TOKEN")  # from .env
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")  # e.g. https://final-bot-arb.onrender.com/webhook/<token>
 PORT = int(os.environ.get("PORT", 8443))
-WEBHOOK_PATH = f"/webhook/{BOT_TOKEN}"
+WEBHOOK_PATH = f"/webhook"
 
 # Initialize bot and dispatcher
 bot = Bot(token=BOT_TOKEN)
