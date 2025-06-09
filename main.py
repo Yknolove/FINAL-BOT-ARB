@@ -16,33 +16,59 @@ PORT         = int(os.environ.get("PORT", 8443))
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher(bot)
 
-# Main menu keyboard
-def main_menu_keyboard():
-    kb = types.InlineKeyboardMarkup(row_width=2)
-    kb.add(
-        types.InlineKeyboardButton("⚙️ Настройки", callback_data="settings"),
-        types.InlineKeyboardButton("📈 Калькулятор", callback_data="calculator"),
-    )
-    kb.add(
-        types.InlineKeyboardButton("📜 История", callback_data="history"),
-        types.InlineKeyboardButton("🔥 Топ-сделки", callback_data="top_deals"),
-    )
-    return kb
 
-# Handlers
-@dp.message_handler(commands=["start"])
-async def cmd_start(message: types.Message):
-    await message.reply(
-        "Привет! Я ArbitPRO-бот. Выберите действие:",
-        reply_markup=main_menu_keyboard()
+# ---------------------------
+#  Утилита для красивого уведомления
+# ---------------------------
+async def send_arbitrage_notification(
+    chat_id: int,
+    buy_source: str,
+    buy_rate: float,
+    buy_min: int,
+    sell_source: str,
+    sell_rate: float,
+    sell_max: int,
+    profit_pct: float,
+    updated_time: str,
+    buy_url: str,
+    sell_url: str,
+):
+    """
+    Отправляет в чат форматированное сообщение об арбитражной возможности:
+    текст с HTML-разметкой, эмодзи и две inline-кнопки.
+    """
+    text = (
+        "<b>🪙 Арбитражная возможность найдена!</b>\n\n"
+        f"💰 <b>Покупка:</b> {buy_source}\n"
+        f"🏷 <b>Курс:</b> {buy_rate:.2f} ₴\n"
+        f"📦 <b>Объём:</b> от {buy_min}$\n\n"
+        f"💼 <b>Продажа:</b> {sell_source}\n"
+        f"🏷 <b>Курс:</b> {sell_rate:.2f} ₴\n"
+        f"📦 <b>Объём:</b> до {sell_max}$\n\n"
+        f"📈 <b>Потенциальная прибыль:</b> +{profit_pct:.1f}%\n"
+        f"⏰ <b>Обновлено:</b> {updated_time}\n\n"
+        "#арбитраж #bybit #binance #p2p"
     )
 
-@dp.message_handler(commands=["ping"])
-async def cmd_ping(message: types.Message):
-    await message.reply("pong")
+    keyboard = types.InlineKeyboardMarkup(row_width=2)
+    keyboard.add(
+        types.InlineKeyboardButton("Открыть оффер на покупку", url=buy_url),
+        types.InlineKeyboardButton("Открыть оффер на продажу", url=sell_url),
+    )
 
-# Callback query handler for menu
-@dp.callback_query_handler(lambda c: c.data in ["settings", "calculator", "history", "top_deals"])
+    await bot.send_message(
+        chat_id=chat_id,
+        text=text,
+        parse_mode=types.ParseMode.HTML,
+        reply_markup=keyboard
+    )
+
+
+# ---------------------------
+#  Ваши хендлеры меню, настройки, калькулятор, история, топ-сделки
+# ---------------------------
+
+@dp.callback_query_handler(lambda c: True)
 async def process_menu_callback(callback: types.CallbackQuery):
     data = callback.data
     if data == "settings":
@@ -55,6 +81,44 @@ async def process_menu_callback(callback: types.CallbackQuery):
         await callback.message.edit_text("Архив топ-сделок дня.")
     await callback.answer()
 
+
+# ---------------------------
+#  Логика сканирования арбитража
+# ---------------------------
+# Вместо простого send_message теперь используйте:
+#
+# await send_arbitrage_notification(
+#     chat_id=chat_id,
+#     buy_source=buy_source,
+#     buy_rate=buy_rate,
+#     buy_min=buy_min,
+#     sell_source=sell_source,
+#     sell_rate=sell_rate,
+#     sell_max=sell_max,
+#     profit_pct=profit_pct,
+#     updated_time=updated_time,
+#     buy_url=buy_offer_url,
+#     sell_url=sell_offer_url,
+# )
+#
+# Пример:
+# async def check_and_notify():
+#     # ... ваш код получения данных ...
+#     await send_arbitrage_notification(
+#         chat_id=123456789,
+#         buy_source="Binance P2P",
+#         buy_rate=41.30,
+#         buy_min=250,
+#         sell_source="ByBit P2P",
+#         sell_rate=42.05,
+#         sell_max=500,
+#         profit_pct=3.6,
+#         updated_time="16:25",
+#         buy_url="https://p2p.binance.com/offer/…",
+#         sell_url="https://p2p.bybit.com/offer/…",
+#     )
+
+
 # Startup and shutdown
 async def on_startup(_):
     logging.info("Setting webhook…")
@@ -65,6 +129,7 @@ async def on_shutdown(_):
     logging.info("Deleting webhook…")
     await bot.delete_webhook()
 
+
 if __name__ == "__main__":
     start_webhook(
         dispatcher=dp,
@@ -74,7 +139,3 @@ if __name__ == "__main__":
         host="0.0.0.0",
         port=PORT,
     )
-
-
-
-
