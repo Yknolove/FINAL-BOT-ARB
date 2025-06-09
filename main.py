@@ -9,19 +9,19 @@ from aiogram.dispatcher.webhook import get_new_configured_app
 logging.basicConfig(level=logging.INFO)
 
 # Environment variables
-BOT_TOKEN   = os.getenv("BOT_TOKEN")
-WEBHOOK_URL = os.getenv("WEBHOOK_URL")           # e.g. https://your.domain/webhook
+BOT_TOKEN    = os.getenv("BOT_TOKEN")
+WEBHOOK_URL  = os.getenv("WEBHOOK_URL")   # e.g. https://…/webhook
 WEBHOOK_PATH = "/webhook"
-PORT        = int(os.getenv("PORT", 8443))
+PORT         = int(os.getenv("PORT", 8443))
 
 # Initialize bot and dispatcher
 bot = Bot(token=BOT_TOKEN)
 dp  = Dispatcher(bot)
 
 
-# ---------------------------
+# --------------------------------
 #  Утилита для красивого уведомления
-# ---------------------------
+# --------------------------------
 async def send_arbitrage_notification(
     chat_id: int,
     buy_source: str,
@@ -60,9 +60,9 @@ async def send_arbitrage_notification(
     )
 
 
-# ---------------------------
+# --------------------------------
 #  Ваши хендлеры меню, настройки, калькулятор, история, топ-сделки
-# ---------------------------
+# --------------------------------
 @dp.callback_query_handler(lambda c: True)
 async def process_menu_callback(callback: types.CallbackQuery):
     data = callback.data
@@ -77,29 +77,32 @@ async def process_menu_callback(callback: types.CallbackQuery):
     await callback.answer()
 
 
-# ---------------------------
+# --------------------------------
 #  Startup и Shutdown
-# ---------------------------
+# --------------------------------
 async def on_startup(app: web.Application):
     logging.info("Setting webhook…")
     await bot.set_webhook(WEBHOOK_URL)
     logging.info(f"Webhook set to {WEBHOOK_URL}")
 
+
 async def on_shutdown(app: web.Application):
     logging.info("Deleting webhook…")
     await bot.delete_webhook()
+    logging.info("Closing bot session…")
+    await bot.session.close()
 
 
-# ---------------------------
+# --------------------------------
 #  Собираем aiohttp-приложение
-# ---------------------------
+# --------------------------------
 app = get_new_configured_app(dispatcher=dp, path=WEBHOOK_PATH)
 
-# Health check
+# Health check для Render
 app.router.add_route('GET',  '/',  lambda request: web.Response(text="OK"))
 app.router.add_route('HEAD', '/',  lambda request: web.Response(text="OK"))
 
-# Подключаем startup/shutdown hooks
+# Хуки запуска и остановки
 app.on_startup.append(on_startup)
 app.on_shutdown.append(on_shutdown)
 
