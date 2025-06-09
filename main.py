@@ -5,7 +5,7 @@ from aiohttp import web
 from aiogram import Bot, Dispatcher, types
 from aiogram.dispatcher.webhook import get_new_configured_app
 
-# — Конфиг логирования
+# — Логирование
 logging.basicConfig(level=logging.INFO)
 
 # — Переменные окружения
@@ -64,7 +64,7 @@ async def send_arbitrage_notification(
 
 
 # ---------------------------
-# Ваши хэндлеры /start, меню, калькулятор, история, топ-сделки
+# Хэндлеры /start, меню, калькулятор, история, топ-сделки
 # ---------------------------
 def main_menu_keyboard() -> types.InlineKeyboardMarkup:
     kb = types.InlineKeyboardMarkup(row_width=2)
@@ -124,19 +124,15 @@ async def on_shutdown(app: web.Application):
 
 
 # ---------------------------
-# Собираем и запускаем aiohttp-приложение
+# Сборка и запуск aiohttp-приложения
 # ---------------------------
 if __name__ == "__main__":
-    # Конфигурируем приложение с маршрутом /webhook
     app = get_new_configured_app(dispatcher=dp, path=WEBHOOK_PATH)
 
-    # Добавляем health-check
     app.router.add_route("GET",  "/", handle_root)
     app.router.add_route("HEAD", "/", handle_root)
 
-    # Регистрируем хуки
     app.on_startup.append(on_startup)
     app.on_shutdown.append(on_shutdown)
 
-    # Запускаем сервер
     web.run_app(app, host="0.0.0.0", port=PORT)
