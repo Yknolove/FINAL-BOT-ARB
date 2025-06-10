@@ -1,9 +1,4 @@
-# Telegram P2P Arbitrage Bot
-
-A minimal Telegram bot that notifies about P2P arbitrage opportunities.
-
-## Environment variables
-
+@@ -7,25 +7,30 @@ A minimal Telegram bot that notifies about P2P arbitrage opportunities.
 Set the following variables in your environment or in a `.env` file before running the bot:
 
 - `BOT_TOKEN` – Telegram bot token obtained from BotFather.
@@ -29,3 +24,8 @@ python main.py
 ```
 
 This will launch the Telegram bot and begin processing updates.
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
+
