@@ -1,4 +1,3 @@
-@@ -7,25 +7,30 @@ A minimal Telegram bot that notifies about P2P arbitrage opportunities.
 # P2P Arbitrage Telegram Bot
 
 A minimal Telegram bot that notifies about P2P arbitrage opportunities.
@@ -16,14 +15,3 @@ Use `pip` to install the requirements:
 
 ```bash
 pip install -r requirements.txt
-```
-
-## Running the bot
-
-After setting the required variables and installing dependencies, start the bot with:
-
-```bash
-python main.py
-```
-
-This will launch the Telegram bot and begin processing updates.
