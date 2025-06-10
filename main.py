@@ -1,7 +1,15 @@
-BOT_TOKEN    = os.getenv("BOT_TOKEN")
-WEBHOOK_URL  = os.getenv("WEBHOOK_URL")   # https://your.domain/webhook
+# -*- coding: utf-8 -*-
+"""Minimal Telegram bot for P2P arbitrage notifications."""
+
+import os
+from aiogram import Bot, Dispatcher, types
+from aiogram.utils import executor
+
+
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+WEBHOOK_URL = os.getenv("WEBHOOK_URL")  # https://your.domain/webhook
 WEBHOOK_PATH = "/webhook"
-PORT         = int(os.getenv("PORT", 8443))
+PORT = int(os.getenv("PORT", 8443))
 
 # Initialize bot and dispatcher
 bot = Bot(token=BOT_TOKEN)
@@ -23,17 +31,6 @@ def main_menu_keyboard() -> types.InlineKeyboardMarkup:
 @dp.message_handler(commands=["start"])
 async def cmd_start(message: types.Message):
     welcome_text = (
-        "<b>👋 Приветствуем в ArbitPRO!</b>
-
-"
-        "Я ваш помощник в мире P2P-арбитража.
-
-"
-        "🔍 Отслеживаю лучшие предложения по покупке и продаже USDT.
-"
-        "⚙️ Настраивайте свои лимиты и получайте уведомления.
-
-"
         "<b>👋 Приветствуем в ArbitPRO!</b>\n"
         "Я ваш помощник в мире P2P-арбитража.\n"
         "🔍 Отслеживаю лучшие предложения по покупке и продаже USDT.\n"
@@ -62,9 +59,6 @@ async def send_arbitrage_notification(
     sell_url: str,
 ):
     text = (
-        "<b>🪙 Арбитражная возможность найдена!</b>
-
-"
         "<b>🪙 Арбитражная возможность найдена!</b>\n"
         f"💰 <b>Покупка:</b> {buy_source}\n"
         f"🏷️ <b>Курс:</b> {buy_rate:.2f} ₴\n"
@@ -90,3 +84,7 @@ async def send_arbitrage_notification(
         disable_web_page_preview=True,
         reply_markup=keyboard,
     )
+
+
+if __name__ == "__main__":
+    executor.start_polling(dp, skip_updates=True)
