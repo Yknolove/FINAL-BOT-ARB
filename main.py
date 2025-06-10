@@ -1,5 +1,6 @@
 BOT_TOKEN = os.getenv( "BOT_TOKEN" )
 WEBHOOK_URL = os.getenv( "WEBHOOK_URL" )    # https://your.domain/webhook
+# -*- кодировка: utf-8 -*-
 """Минимальный бот Telegram для уведомлений об арбитраже P2P."""
 
 импортировать​
