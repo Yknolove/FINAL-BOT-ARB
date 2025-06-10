@@ -197,3 +197,9 @@ async def send_arbitrage_notification(
     executor.start_polling(dp, skip_updates= True )
 if __name__ == "__main__":
     executor.start_polling(dp, skip_updates=True)
+    print("Bot configuration loaded")
+
+если __name__ == "__main__" :
+    executor.start_polling(dp, skip_updates= True )
+if __name__ == "__main__":
+    executor.start_polling(dp, skip_updates=True)
