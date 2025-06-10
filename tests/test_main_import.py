@@ -3,6 +3,9 @@ import importlib
 import os
 import sys
 
+# Skip the test entirely if aiogram is not available
+pytest.importorskip("aiogram")
+
 
 def test_import_main(monkeypatch):
     monkeypatch.setenv('BOT_TOKEN', 'test-token')
