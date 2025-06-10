@@ -1,13 +1,24 @@
-BOT_TOKEN    = os.getenv("BOT_TOKEN")
-WEBHOOK_URL  = os.getenv("WEBHOOK_URL")   # https://your.domain/webhook
+"""Telegram bot for P2P arbitrage notifications."""
+
+import logging
+import os
+
+from aiogram import Bot, Dispatcher, types
+from aiogram.dispatcher.webhook import get_new_configured_app
+from aiogram.utils import executor
+from aiohttp import web
+
+
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+WEBHOOK_URL = os.getenv("WEBHOOK_URL")  # e.g. https://your.domain/webhook
 WEBHOOK_PATH = "/webhook"
-PORT         = int(os.getenv("PORT", 8443))
+PORT = int(os.getenv("PORT", 8443))
 
-# Initialize bot and dispatcher
+
 bot = Bot(token=BOT_TOKEN)
-dp  = Dispatcher(bot)
+dp = Dispatcher(bot)
 
-# Main menu keyboard
+
 def main_menu_keyboard() -> types.InlineKeyboardMarkup:
     kb = types.InlineKeyboardMarkup(row_width=2)
     kb.add(
@@ -19,21 +30,10 @@ def main_menu_keyboard() -> types.InlineKeyboardMarkup:
     )
     return kb
 
-# /start handler
+
 @dp.message_handler(commands=["start"])
-async def cmd_start(message: types.Message):
+async def cmd_start(message: types.Message) -> None:
     welcome_text = (
-        "<b>👋 Приветствуем в ArbitPRO!</b>
-
-"
-        "Я ваш помощник в мире P2P-арбитража.
-
-"
-        "🔍 Отслеживаю лучшие предложения по покупке и продаже USDT.
-"
-        "⚙️ Настраивайте свои лимиты и получайте уведомления.
-
-"
         "<b>👋 Приветствуем в ArbitPRO!</b>\n"
         "Я ваш помощник в мире P2P-арбитража.\n"
         "🔍 Отслеживаю лучшие предложения по покупке и продаже USDT.\n"
@@ -44,49 +44,47 @@ async def cmd_start(message: types.Message):
         welcome_text,
         parse_mode=types.ParseMode.HTML,
         reply_markup=main_menu_keyboard(),
-        disable_web_page_preview=True
-    )
-
-# Utility: send embed-style arbitrage notification with URL buttons
-async def send_arbitrage_notification(
-    chat_id: int,
-    buy_source: str,
-    buy_rate: float,
-    buy_min: int,
-    sell_source: str,
-    sell_rate: float,
-    sell_max: int,
-    profit_pct: float,
-    updated_time: str,
-    buy_url: str,
-    sell_url: str,
-):
-    text = (
-        "<b>🪙 Арбитражная возможность найдена!</b>
-
-"
-        "<b>🪙 Арбитражная возможность найдена!</b>\n"
-        f"💰 <b>Покупка:</b> {buy_source}\n"
-        f"🏷️ <b>Курс:</b> {buy_rate:.2f} ₴\n"
-        f"📦 <b>Объём:</b> от {buy_min}$\n\n"
-        f"💼 <b>Продажа:</b> {sell_source}\n"
-        f"🏷️ <b>Курс:</b> {sell_rate:.2f} ₴\n"
-        f"📦 <b>Объём:</b> до {sell_max}$\n\n"
-        f"📈 <b>Потенциальная прибыль:</b> +{profit_pct:.1f}%\n"
-        f"⏰ <b>Обновлено:</b> {updated_time}\n\n"
-        "#арбитраж #bybit #binance #p2p"
-    )
-
-    keyboard = types.InlineKeyboardMarkup(row_width=2)
-    keyboard.add(
-        types.InlineKeyboardButton("🔗 Оферт на покупку", url=buy_url),
-        types.InlineKeyboardButton("🔗 Оффер на продажу", url=sell_url),
-    )
-
-    await bot.send_message(
-        chat_id=chat_id,
-        text=text,
-        parse_mode=types.ParseMode.HTML,
         disable_web_page_preview=True,
-        reply_markup=keyboard,
     )
+
+
+@dp.callback_query_handler(lambda c: c.data in [
+    "settings", "calculator", "history", "top_deals"])
+async def menu_handler(callback: types.CallbackQuery) -> None:
+    text_map = {
+        "settings": "🔧 Здесь вы можете настроить желаемые курсы и объёмы.",
+        "calculator": "🧮 Введите сумму, и я посчитаю потенциальный профит.",
+        "history": "📚 История ваших совершённых сделок появится здесь.",
+        "top_deals": "🔥 Топ P2P-сделки за сегодня.",
+    }
+    await callback.message.edit_text(
+        text_map.get(callback.data, "Раздел в разработке."),
+        parse_mode=types.ParseMode.HTML,
+        reply_markup=main_menu_keyboard(),
+    )
+    await callback.answer()
+
+
+async def handle_root(_: web.Request) -> web.Response:
+    return web.Response(text="OK")
+
+
+async def on_startup(_: web.Application) -> None:
+    logging.info("Setting webhook...")
+    await bot.set_webhook(WEBHOOK_URL)
+
+
+async def on_shutdown(_: web.Application) -> None:
+    logging.info("Deleting webhook...")
+    await bot.delete_webhook()
+    await bot.session.close()
+
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
+    app = get_new_configured_app(dispatcher=dp, path=WEBHOOK_PATH)
+    app.router.add_get("/", handle_root)
+    app.router.add_head("/", handle_root)
+    app.on_startup.append(on_startup)
+    app.on_shutdown.append(on_shutdown)
+    web.run_app(app, host="0.0.0.0", port=PORT)
