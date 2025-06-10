@@ -20,11 +20,15 @@ WEBHOOK_PATH = "/webhook"
 ПОРТ         = int (os.getenv( "ПОРТ" , 8443 ))
 ПОРТ= int (os.getenv( "PORT" , 8443 ))
 PORT = int(os.getenv("PORT", 8443))
+WEBHOOK_PATH = "/webhook"
 
 # Инициализируем бота и диспетчера
 бот = Бот(токен=BOT_TOKEN)
 dp = Диспетчер(бот)
 bot = Bot(token=BOT_TOKEN)
+# Create bot even if token is missing or invalid.
+_token = BOT_TOKEN if (BOT_TOKEN and ':' in BOT_TOKEN) else '0:dummy'
+bot = Bot(token=_token, validate_token=False)
 dp = Dispatcher(bot)
 
 # Клавиатура главного меню
@@ -33,7 +37,9 @@ def main_menu_keyboard () -> types.InlineKeyboardMarkup:
     кб = типы.InlineKeyboardMarkup(row_width= 2 )
     кб.добавить(
         types.InlineKeyboardButton( "⚙️ Настройки" , callback_data= "settings" ),
+
 def main_menu_keyboard() -> types.InlineKeyboardMarkup:
+    """Return the inline keyboard for the main menu."""
     kb = types.InlineKeyboardMarkup(row_width=2)
     kb.add(
         types.InlineKeyboardButton("⚙️ Настройки", callback_data="settings"),
@@ -42,6 +48,8 @@ def main_menu_keyboard() -> types.InlineKeyboardMarkup:
         types.InlineKeyboardButton( "📜 История" , callback_data= "history" ),
         types.InlineKeyboardButton( "🔥 Топ-сделки" , callback_data= "top_deals" ),
     ).add(
+    )
+    kb.add(
         types.InlineKeyboardButton("📜 История", callback_data="history"),
         types.InlineKeyboardButton("🔥 Топ-сделки", callback_data="top_deals"),
     )
@@ -66,6 +74,8 @@ async def cmd_start ( сообщение: типы.Сообщение ):
 "
 @dp.message_handler(commands=["start"])
 async def cmd_start(message: types.Message):
+async def cmd_start(message: types.Message) -> None:
+    """Handle the /start command."""
     welcome_text = (
         "<b>👋 Приветствуем в ArbitPRO!</b>\n"
         "Я ваш помощник в мире P2P-арбитража.\n"
@@ -97,6 +107,7 @@ async def cmd_start(message: types.Message):
     время_обновления: ул ,
     buy_url: ул ,
     sell_url: ул ,
+
 async def send_arbitrage_notification(
     chat_id: int,
     buy_source: str,
@@ -114,6 +125,8 @@ async def send_arbitrage_notification(
         "<b>🪙 Арбитражная возможность найдена!</b>
 
 "
+) -> None:
+    """Send an arbitrage notification to a chat."""
     text = (
         "<b>🪙 Арбитражная возможность найдена!</b>\n"
         f"💰 <b>Покупка:</b> {buy_source}\n"
