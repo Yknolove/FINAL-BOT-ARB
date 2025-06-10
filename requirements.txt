@@ -1,1 +1,2 @@
 aiogram==2.25.1
+pytest==7.4.0
