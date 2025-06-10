@@ -2,6 +2,9 @@ BOT_TOKEN = os.getenv( "BOT_TOKEN" )
 WEBHOOK_URL = os.getenv( "WEBHOOK_URL" )    # https://your.domain/webhook
 # -*- кодировка: utf-8 -*-
 """Минимальный бот Telegram для уведомлений об арбитраже P2P."""
+import os
+from aiogram import Bot, Dispatcher, types
+from aiogram.utils import executor
 
 импортировать​
 из импорта aiogram Bot, Dispatcher, типы
@@ -11,13 +14,18 @@ WEBHOOK_URL = os.getenv( "WEBHOOK_URL" )    # https://your.domain/webhook
 
 BOT_TOKEN = os.getenv( "BOT_TOKEN" )
 WEBHOOK_URL = os.getenv( "WEBHOOK_URL" )   # https://your.domain/webhook
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+WEBHOOK_URL = os.getenv("WEBHOOK_URL")  # https://your.domain/webhook
 WEBHOOK_PATH = "/webhook"
 ПОРТ         = int (os.getenv( "ПОРТ" , 8443 ))
 ПОРТ= int (os.getenv( "PORT" , 8443 ))
+PORT = int(os.getenv("PORT", 8443))
 
 # Инициализируем бота и диспетчера
 бот = Бот(токен=BOT_TOKEN)
 dp = Диспетчер(бот)
+bot = Bot(token=BOT_TOKEN)
+dp = Dispatcher(bot)
 
 # Клавиатура главного меню
 def main_menu_keyboard () -> types.InlineKeyboardMarkup:
@@ -25,10 +33,17 @@ def main_menu_keyboard () -> types.InlineKeyboardMarkup:
     кб = типы.InlineKeyboardMarkup(row_width= 2 )
     кб.добавить(
         types.InlineKeyboardButton( "⚙️ Настройки" , callback_data= "settings" ),
+def main_menu_keyboard() -> types.InlineKeyboardMarkup:
+    kb = types.InlineKeyboardMarkup(row_width=2)
+    kb.add(
+        types.InlineKeyboardButton("⚙️ Настройки", callback_data="settings"),
         types.InlineKeyboardButton("📈 Калькулятор", callback_data="calculator"),
     ).добавлять(
         types.InlineKeyboardButton( "📜 История" , callback_data= "history" ),
         types.InlineKeyboardButton( "🔥 Топ-сделки" , callback_data= "top_deals" ),
+    ).add(
+        types.InlineKeyboardButton("📜 История", callback_data="history"),
+        types.InlineKeyboardButton("🔥 Топ-сделки", callback_data="top_deals"),
     )
     вернуть кб
 
@@ -41,6 +56,7 @@ async def cmd_start ( сообщение: типы.Сообщение ):
 
 "
         "Я ваш помощник в мире P2P-арбитража.
+    return kb
 
 "
         "🔍 Отслеживаю лучшие предложения по покупке и продаже USDT.
@@ -48,6 +64,9 @@ async def cmd_start ( сообщение: типы.Сообщение ):
         "⚙️ Настраивайте свои лимиты и получайте уведомления.
 
 "
+@dp.message_handler(commands=["start"])
+async def cmd_start(message: types.Message):
+    welcome_text = (
         "<b>👋 Приветствуем в ArbitPRO!</b>\n"
         "Я ваш помощник в мире P2P-арбитража.\n"
         "🔍 Отслеживаю лучшие предложения по покупке и продаже USDT.\n"
@@ -56,9 +75,13 @@ async def cmd_start ( сообщение: типы.Сообщение ):
     )
     ожидание сообщения.ответ(
         приветственный_текст,
+    await message.answer(
+        welcome_text,
         parse_mode=types.ParseMode.HTML,
         reply_markup=главное_меню_клавиатура(),
         disable_web_page_preview= Правда
+        reply_markup=main_menu_keyboard(),
+        disable_web_page_preview=True,
     )
 
 # Утилита: отправка уведомления об арбитраже в стиле встраивания с кнопками URL
@@ -74,17 +97,33 @@ async def cmd_start ( сообщение: типы.Сообщение ):
     время_обновления: ул ,
     buy_url: ул ,
     sell_url: ул ,
+async def send_arbitrage_notification(
+    chat_id: int,
+    buy_source: str,
+    buy_rate: float,
+    buy_min: int,
+    sell_source: str,
+    sell_rate: float,
+    sell_max: int,
+    profit_pct: float,
+    updated_time: str,
+    buy_url: str,
+    sell_url: str,
 ):
     текст = (
         "<b>🪙 Арбитражная возможность найдена!</b>
 
 "
+    text = (
         "<b>🪙 Арбитражная возможность найдена!</b>\n"
         f"💰 <b>Покупка:</b> {buy_source}\n"
         f"🏷️ <b>Курс:</b> {buy_rate: .2 f} ₴\n"
+        f"🏷️ <b>Курс:</b> {buy_rate:.2f} ₴\n"
         f"📦 <b>Объём:</b> от {buy_min}$\n\n"
         f"💼 <b>Продажа:</b> {sell_source} \n"
         f"🏷️ <b>Курс:</b> {sell_rate: .2 f} ₴\n"
+        f"💼 <b>Продажа:</b> {sell_source}\n"
+        f"🏷️ <b>Курс:</b> {sell_rate:.2f} ₴\n"
         f"📦 <b>Объём:</b> до {sell_max}$\n\n"
         f"📈 <b>Потенциальная прибыль:</b> +{profit_pct:.1f}%\n"
         f"⏰ <b>Обновлено:</b> {updated_time}\n\n"
@@ -95,16 +134,26 @@ async def cmd_start ( сообщение: типы.Сообщение ):
     клавиатура.добавить(
         types.InlineKeyboardButton("🔗 Оферт на покупку", url=buy_url),
         types.InlineKeyboardButton( "🔗 Предложение о продаже" , url=sell_url),
+    keyboard = types.InlineKeyboardMarkup(row_width=2)
+    keyboard.add(
+        types.InlineKeyboardButton("🔗 Оферта на покупку", url=buy_url),
+        types.InlineKeyboardButton("🔗 Предложение о продаже", url=sell_url),
     )
 
     ожидание bot.send_message(
+    await bot.send_message(
         chat_id=chat_id,
         текст=текст,
+        text=text,
         parse_mode=types.ParseMode.HTML,
         disable_web_page_preview= Правда ,
         reply_markup=клавиатура,
+        disable_web_page_preview=True,
+        reply_markup=keyboard,
     )
 
 
 если __name__ == "__main__" :
     executor.start_polling(dp, skip_updates= True )
+if __name__ == "__main__":
+    executor.start_polling(dp, skip_updates=True)
